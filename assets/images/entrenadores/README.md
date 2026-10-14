@@ -1,7 +1,5 @@
 # Fotografías de entrenadores
 
-Colocá aquí la fotografía definitiva de César Ariel Gerez con este nombre exacto:
+La fotografía de César Ariel Gerez está en `entrenadores/PerfilEntrenadores/profecesar.jpeg`.
 
-`cesar-ariel-gerez.jpg`
-
-La tarjeta y el perfil ya apuntan a esa ruta. Mientras el archivo no exista, se muestra un avatar con iniciales; no representa una fotografía real.
+La tarjeta y el perfil usan esa imagen; si no se puede cargar, se muestran las iniciales como alternativa.
