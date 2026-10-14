@@ -14,7 +14,7 @@
 
   /** Genera el marcado de la fotografía publicada o un avatar con iniciales como alternativa. */
   function generarAvatar(coach) {
-    var initials = '<span style="background:' + AjedrezUI.initialsColor(coach.iniciales) +
+    var initials = '<span' + (coach.imagen ? ' hidden' : '') + ' style="background:' + AjedrezUI.initialsColor(coach.iniciales) +
       '" aria-hidden="true">' + AjedrezUI.escape(coach.iniciales) + '</span>';
     if (!coach.imagen) return initials;
     return '<img src="../' + AjedrezUI.escape(coach.imagen) + '" alt="Fotografía de ' +
