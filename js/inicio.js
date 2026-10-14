@@ -17,7 +17,7 @@
   if (exerciseCount) exerciseCount.textContent = exercises.length;
   if (coachGrid) {
     coachGrid.innerHTML = coaches.slice(0, 3).map(function (coach) {
-      var initials = '<span style="background:' + AjedrezUI.initialsColor(coach.iniciales) +
+      var initials = '<span' + (coach.imagen ? ' hidden' : '') + ' style="background:' + AjedrezUI.initialsColor(coach.iniciales) +
         '" aria-hidden="true">' + AjedrezUI.escape(coach.iniciales) + '</span>';
       var image = coach.imagen ?
         '<div class="coach-avatar coach-avatar-media"><img src="' +
