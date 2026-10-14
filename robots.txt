@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+# Agregar Sitemap cuando exista un dominio definitivo.
