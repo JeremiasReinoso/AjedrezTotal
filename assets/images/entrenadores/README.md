@@ -1,5 +1,8 @@
 # Fotografías de entrenadores
 
-La fotografía de César Ariel Gerez está en `entrenadores/PerfilEntrenadores/profecesar.jpeg`.
+Las fotografías de los entrenadores publicados están en:
+
+- César Ariel Gerez: `entrenadores/PerfilEntrenadores/profecesar.jpeg`.
+- Jeremias Reinoso: `entrenadores/PerfilEntrenadores/ProfeJere.png`.
 
 La tarjeta y el perfil usan esa imagen; si no se puede cargar, se muestran las iniciales como alternativa.
