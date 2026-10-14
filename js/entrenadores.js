@@ -14,7 +14,7 @@
 
   /** Genera el avatar con fotografía y reserva las iniciales como alternativa. */
   function generarMedia(coach) {
-    var initials = '<span style="background:' + AjedrezUI.initialsColor(coach.iniciales) +
+    var initials = '<span' + (coach.imagen ? ' hidden' : '') + ' style="background:' + AjedrezUI.initialsColor(coach.iniciales) +
       '" aria-hidden="true">' + AjedrezUI.escape(coach.iniciales) + '</span>';
     if (!coach.imagen) {
       return '<div class="coach-avatar" style="background:' +
