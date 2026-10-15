@@ -1,281 +1,32 @@
-/**
- * Provee un validador local de movimientos y la interfaz de resolución de ejercicios.
- * Consume FEN y soluciones de js/datos-ejercicios.js; valida el subconjunto de reglas usado por esas posiciones.
- */
+/* Tablero de ejercicios propio. Usa Chess.js cuando está disponible y conserva
+ * un validador local para que los ejercicios editoriales sigan funcionando offline. */
 (function () {
   'use strict';
-  var PIECES = {
-    p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚',
-    P: '♙', R: '♖', N: '♘', B: '♗', Q: '♕', K: '♔'
-  };
-  var files = 'abcdefgh';
-  function fromFen(fen) {
-    var rows = fen.split(' ')[0].split('/');
-    var board = [];
-    rows.forEach(function (row) {
-      var line = [];
-      for (var index = 0; index < row.length; index++) {
-        var character = row[index];
-        if (/\d/.test(character)) {
-          for (var count = 0; count < +character; count++) line.push(null);
-        } else {
-          line.push(character);
-        }
-      }
-      board.push(line);
-    });
-    return {
-      board: board,
-      turn: fen.split(' ')[1],
-      castling: fen.split(' ')[2] || '-',
-      ep: fen.split(' ')[3] || '-',
-      history: []
-    };
-  }
-
-  function color(piece) {
-    return piece === piece.toUpperCase() ? 'w' : 'b';
-  }
-
-  function inside(row, column) {
-    return row >= 0 && row < 8 && column >= 0 && column < 8;
-  }
-
-  function square(row, column) {
-    return files[column] + (8 - row);
-  }
-
-  function coords(squareName) {
-    return [8 - +squareName[1], files.indexOf(squareName[0])];
-  }
-
-  function attacks(state, fromRow, fromColumn, toRow, toColumn) {
-    var piece = state.board[fromRow][fromColumn];
-    var type = piece.toLowerCase();
-    var rowDelta = toRow - fromRow;
-    var columnDelta = toColumn - fromColumn;
-    if (type === 'p') {
-      return Math.abs(columnDelta) === 1 &&
-        rowDelta === (color(piece) === 'w' ? -1 : 1);
-    }
-    if (type === 'n') {
-      return (Math.abs(rowDelta) === 2 && Math.abs(columnDelta) === 1) ||
-        (Math.abs(rowDelta) === 1 && Math.abs(columnDelta) === 2);
-    }
-    if (type === 'k') {
-      return Math.max(Math.abs(rowDelta), Math.abs(columnDelta)) === 1;
-    }
-    if (type === 'r' && rowDelta !== 0 && columnDelta !== 0 ||
-        type === 'b' && Math.abs(rowDelta) !== Math.abs(columnDelta) ||
-        type === 'q' && rowDelta !== 0 && columnDelta !== 0 &&
-        Math.abs(rowDelta) !== Math.abs(columnDelta)) {
-      return false;
-    }
-    var rowStep = Math.sign(rowDelta);
-    var columnStep = Math.sign(columnDelta);
-    var row = fromRow + rowStep;
-    var column = fromColumn + columnStep;
-    while (row !== toRow || column !== toColumn) {
-      if (state.board[row][column]) return false;
-      row += rowStep;
-      column += columnStep;
-    }
-    return true;
-  }
-
-  function attacked(state, row, column, byColor) {
-    for (var fromRow = 0; fromRow < 8; fromRow++) {
-      for (var fromColumn = 0; fromColumn < 8; fromColumn++) {
-        var piece = state.board[fromRow][fromColumn];
-        if (piece && color(piece) === byColor &&
-            attacks(state, fromRow, fromColumn, row, column)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  function inCheck(state, side) {
-    for (var row = 0; row < 8; row++) {
-      for (var column = 0; column < 8; column++) {
-        if (state.board[row][column] === (side === 'w' ? 'K' : 'k')) {
-          return attacked(state, row, column, side === 'w' ? 'b' : 'w');
-        }
-      }
-    }
-    return true;
-  }
-
-  function pseudo(state, fromRow, fromColumn, toRow, toColumn) {
-    var piece = state.board[fromRow][fromColumn];
-    var target = state.board[toRow][toColumn];
-    if (!piece || color(piece) !== state.turn ||
-        target && color(target) === state.turn ||
-        target && target.toLowerCase() === 'k') {
-      return false;
-    }
-    var type = piece.toLowerCase();
-    var rowDelta = toRow - fromRow;
-    var columnDelta = toColumn - fromColumn;
-    if (type === 'p') {
-      var direction = color(piece) === 'w' ? -1 : 1;
-      var startRow = color(piece) === 'w' ? 6 : 1;
-      if (columnDelta === 0 && !target && rowDelta === direction) return true;
-      if (columnDelta === 0 && !target && fromRow === startRow &&
-          rowDelta === 2 * direction && !state.board[fromRow + direction][fromColumn]) {
-        return true;
-      }
-      if (Math.abs(columnDelta) === 1 && rowDelta === direction && target &&
-          color(target) !== color(piece)) {
-        return true;
-      }
-      return false;
-    }
-    return attacks(state, fromRow, fromColumn, toRow, toColumn);
-  }
-
-  function clone(state) {
-    return {
-      board: state.board.map(function (row) { return row.slice(); }),
-      turn: state.turn,
-      castling: state.castling,
-      ep: state.ep,
-      history: state.history.slice()
-    };
-  }
-
-  function legal(state, fromRow, fromColumn, toRow, toColumn) {
-    if (!pseudo(state, fromRow, fromColumn, toRow, toColumn)) return false;
-    var next = clone(state);
-    var piece = next.board[fromRow][fromColumn];
-    next.board[toRow][toColumn] = piece;
-    next.board[fromRow][fromColumn] = null;
-    return !inCheck(next, color(piece));
-  }
-
-  function make(state, move) {
-    var from = coords(move.slice(0, 2));
-    var to = coords(move.slice(2, 4));
-    if (!legal(state, from[0], from[1], to[0], to[1])) return false;
-    state.board[to[0]][to[1]] = state.board[from[0]][from[1]];
-    state.board[from[0]][from[1]] = null;
-    state.history.push(move);
-    state.turn = state.turn === 'w' ? 'b' : 'w';
-    return true;
-  }
-
-  function renderBoard(root, state, selected, targets, click) {
-    root.innerHTML = '';
-    for (var row = 0; row < 8; row++) {
-      for (var column = 0; column < 8; column++) {
-        var button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'square ' + ((row + column) % 2 ? 'dark' : 'light');
-        var key = square(row, column);
-        var piece = state.board[row][column];
-        if (selected === key) button.classList.add('selected');
-        if (targets.indexOf(key) > -1) button.classList.add(piece ? 'capture' : 'target');
-        if (piece) {
-          button.textContent = PIECES[piece];
-          button.classList.add(color(piece) === 'w' ? 'piece-white' : 'piece-black');
-          button.setAttribute(
-            'aria-label',
-            (color(piece) === 'w' ? 'Blanca ' : 'Negra ') + piece.toLowerCase() + ' en ' + key
-          );
-        } else {
-          button.setAttribute('aria-label', 'Casilla ' + key);
-        }
-        button.addEventListener('click', function () {
-          click(this.getAttribute('aria-label').split(' ').pop());
-        });
-        root.appendChild(button);
-      }
-    }
-  }
-
-  function targetsFor(state, from) {
-    var origin = coords(from);
-    var targets = [];
-    for (var row = 0; row < 8; row++) {
-      for (var column = 0; column < 8; column++) {
-        if (legal(state, origin[0], origin[1], row, column)) {
-          targets.push(square(row, column));
-        }
-      }
-    }
-    return targets;
-  }
-
-  window.AjedrezChess = { fromFen: fromFen, make: make, inCheck: inCheck };
-  var root = document.querySelector('#tablero');
-  var exercise = (window.AjedrezDatos.ejercicios || [])[0];
-  var state;
-  var selected = null;
-  var targets = [];
-  var index = 0;
-  var solved = 0;
-  if (!root) return;
-
-  var title = document.querySelector('#ejercicio-titulo');
-  var message = document.querySelector('#mensaje-ejercicio');
-  var moveList = document.querySelector('#lista-movimientos');
-  var progress = document.querySelector('#progreso');
-
-  function load() {
-    exercise = window.AjedrezDatos.ejercicios[index];
-    state = fromFen(exercise.fen);
-    selected = null;
-    targets = [];
-    title.textContent = exercise.titulo;
-    document.querySelector('#ejercicio-meta').textContent =
-      exercise.dificultad + ' · ' + exercise.categoria;
-    message.textContent = 'Tu turno: encontrá la jugada definida para este ejercicio.';
-    message.className = 'status-message';
-    moveList.textContent = '';
-    progress.textContent = solved + ' de ' + window.AjedrezDatos.ejercicios.length + ' resueltos';
-    renderBoard(root, state, selected, targets, clickSquare);
-  }
-
-  function clickSquare(key) {
-    if (selected) {
-      if (targets.indexOf(key) > -1) {
-        var move = selected + key;
-        if (move === exercise.solucion) {
-          AjedrezChess.make(state, move);
-          solved++;
-          message.textContent = 'Respuesta correcta. ' + exercise.explicacion;
-          message.className = 'status-message success';
-          moveList.textContent = state.history.join(' · ');
-          renderBoard(root, state, null, [], clickSquare);
-        } else {
-          message.textContent = 'Ese movimiento es legal, pero no es la solución definida. ' +
-            'Revisá jaques, capturas y amenazas.';
-          message.className = 'status-message error';
-          selected = null;
-          targets = [];
-          renderBoard(root, state, null, [], clickSquare);
-        }
-      } else {
-        selected = null;
-        targets = [];
-        renderBoard(root, state, null, [], clickSquare);
-      }
-    } else {
-      var coordinates = coords(key);
-      var piece = state.board[coordinates[0]][coordinates[1]];
-      if (piece && color(piece) === state.turn) {
-        selected = key;
-        targets = targetsFor(state, key);
-        renderBoard(root, state, selected, targets, clickSquare);
-      }
-    }
-  }
-
-  document.querySelector('#reiniciar-ejercicio').addEventListener('click', load);
-  document.querySelector('#siguiente-ejercicio').addEventListener('click', function () {
-    index = (index + 1) % window.AjedrezDatos.ejercicios.length;
-    load();
-  });
-  load();
+  var PIECES = { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚', P: '♙', R: '♖', N: '♘', B: '♗', Q: '♕', K: '♔' };
+  var FILES = 'abcdefgh', API = 'https://lichess.org/api/puzzle/daily';
+  var localExercises = (window.AjedrezDatos && window.AjedrezDatos.ejercicios) || [];
+  function color(p) { return p === p.toUpperCase() ? 'w' : 'b'; }
+  function coords(s) { return [8 - Number(s[1]), FILES.indexOf(s[0])]; }
+  function name(r, c) { return FILES[c] + (8 - r); }
+  function inside(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
+  function fallback(fen) { var f = fen.split(' '), rows = f[0].split('/'), board = []; rows.forEach(function (row) { var line = []; for (var i = 0; i < row.length; i++) { if (/\d/.test(row[i])) for (var n = 0; n < +row[i]; n++) line.push(null); else line.push(row[i]); } board.push(line); }); return { board: board, turn: f[1] || 'w', castling: f[2] || '-', ep: f[3] || '-', history: [] }; }
+  function clone(s) { return { board: s.board.map(function (r) { return r.slice(); }), turn: s.turn, castling: s.castling, ep: s.ep, history: s.history.slice() }; }
+  function ray(s, fr, fc, tr, tc) { var dr = tr - fr, dc = tc - fc, p = s.board[fr][fc], t = p.toLowerCase(); if (t === 'n') return Math.abs(dr) === 2 && Math.abs(dc) === 1 || Math.abs(dr) === 1 && Math.abs(dc) === 2; if (t === 'k') return Math.max(Math.abs(dr), Math.abs(dc)) === 1; if (t === 'r' && dr && dc || t === 'b' && Math.abs(dr) !== Math.abs(dc) || t === 'q' && dr && dc && Math.abs(dr) !== Math.abs(dc)) return false; if (t === 'p') return Math.abs(dc) === 1 && dr === (color(p) === 'w' ? -1 : 1); var sr = Math.sign(dr), sc = Math.sign(dc), r = fr + sr, c = fc + sc; while (r !== tr || c !== tc) { if (s.board[r][c]) return false; r += sr; c += sc; } return true; }
+  function attacked(s, r, c, by) { for (var fr = 0; fr < 8; fr++) for (var fc = 0; fc < 8; fc++) { var p = s.board[fr][fc]; if (p && color(p) === by && ray(s, fr, fc, r, c)) return true; } return false; }
+  function check(s, side) { for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) if (s.board[r][c] === (side === 'w' ? 'K' : 'k')) return attacked(s, r, c, side === 'w' ? 'b' : 'w'); return true; }
+  function castle(s, fr, fc, tr, tc) { var side = s.turn, row = side === 'w' ? 7 : 0, rook = side === 'w' ? 'R' : 'r', wing = tc > fc ? 'K' : 'Q', rights = side === 'w' ? wing : wing.toLowerCase(); if (fr !== row || fc !== 4 || tr !== row || !s.castling.includes(rights) || s.board[row][tc > fc ? 7 : 0] !== rook) return false; var step = tc > fc ? 1 : -1; for (var c = fc + step; c !== (tc > fc ? 7 : 0); c += step) if (s.board[row][c]) return false; return !attacked(s, row, fc + step, side === 'w' ? 'b' : 'w') && !attacked(s, row, tc, side === 'w' ? 'b' : 'w'); }
+  function pseudo(s, fr, fc, tr, tc) { var p = s.board[fr][fc], target = s.board[tr][tc]; if (!p || color(p) !== s.turn || target && color(target) === s.turn || target && target.toLowerCase() === 'k') return false; var t = p.toLowerCase(), dr = tr - fr, dc = tc - fc, dir = color(p) === 'w' ? -1 : 1; if (t === 'p') return dc === 0 && !target && dr === dir || dc === 0 && !target && fr === (color(p) === 'w' ? 6 : 1) && dr === 2 * dir && !s.board[fr + dir][fc] || Math.abs(dc) === 1 && dr === dir && (target && color(target) !== color(p) || name(tr, tc) === s.ep); if (t === 'k' && Math.abs(dc) === 2 && dr === 0) return !check(s, s.turn) && castle(s, fr, fc, tr, tc); return ray(s, fr, fc, tr, tc); }
+  function legal(s, fr, fc, tr, tc) { if (!inside(tr, tc) || !pseudo(s, fr, fc, tr, tc)) return false; var n = clone(s), p = n.board[fr][fc], t = p.toLowerCase(), ep = t === 'p' && name(tr, tc) === s.ep && !n.board[tr][tc]; n.board[tr][tc] = p; n.board[fr][fc] = null; if (ep) n.board[tr + (color(p) === 'w' ? 1 : -1)][tc] = null; if (t === 'k' && Math.abs(tc - fc) === 2) { var rf = tc > fc ? 7 : 0, rt = tc > fc ? 5 : 3; n.board[tr][rt] = n.board[tr][rf]; n.board[tr][rf] = null; } return !check(n, color(p)); }
+  function makeFallback(s, uci) { var a = coords(uci.slice(0, 2)), b = coords(uci.slice(2, 4)); if (!legal(s, a[0], a[1], b[0], b[1])) return false; var p = s.board[a[0]][a[1]], t = p.toLowerCase(); if (t === 'p' && uci.slice(2, 4) === s.ep && !s.board[b[0]][b[1]]) s.board[b[0] + (color(p) === 'w' ? 1 : -1)][b[1]] = null; s.board[b[0]][b[1]] = uci[4] ? color(p) === 'w' ? uci[4].toUpperCase() : uci[4] : p; s.board[a[0]][a[1]] = null; if (t === 'k' && Math.abs(b[1] - a[1]) === 2) { var rf = b[1] > a[1] ? 7 : 0, rt = b[1] > a[1] ? 5 : 3; s.board[b[0]][rt] = s.board[b[0]][rf]; s.board[b[0]][rf] = null; } s.ep = '-'; if (t === 'p' && Math.abs(b[0] - a[0]) === 2) s.ep = name((a[0] + b[0]) / 2, a[1]); s.history.push(uci); s.turn = s.turn === 'w' ? 'b' : 'w'; return true; }
+  function engine(fen) { var chess = window.Chess ? new window.Chess(fen) : null, state = chess ? null : fallback(fen); return { move: function (u) { if (chess) return !!chess.move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] || 'q' }); var a = coords(u.slice(0, 2)), b = coords(u.slice(2, 4)); return makeFallback(state, u) && legal; }, turn: function () { return chess ? chess.turn() : state.turn; }, board: function () { return chess ? chess.board().map(function (row) { return row.map(function (p) { return p ? p.color === 'w' ? p.type.toUpperCase() : p.type : null; }); }) : state.board; }, moves: function (from) { if (chess) return chess.moves({ square: from, verbose: true }).map(function (m) { return m.to; }); var a = coords(from), out = []; for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) if (legal(state, a[0], a[1], r, c)) out.push(name(r, c)); return out; } }; }
+  function render(root, game, selected, targets, click) { root.innerHTML = ''; var board = game.board(); for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) { var b = document.createElement('button'), sq = name(r, c), p = board[r][c]; b.type = 'button'; b.className = 'square ' + ((r + c) % 2 ? 'dark' : 'light'); if (sq === selected) b.classList.add('selected'); if (targets.indexOf(sq) >= 0) b.classList.add(p ? 'capture' : 'target'); if (p) { b.textContent = PIECES[p]; b.classList.add(color(p) === 'w' ? 'piece-white' : 'piece-black'); } b.setAttribute('aria-label', (p ? 'Pieza en ' : 'Casilla ') + sq); b.addEventListener('click', function () { click(this.getAttribute('aria-label').slice(-2)); }); root.appendChild(b); } }
+  function fetchDaily() { return fetch(API, { headers: { Accept: 'application/json' } }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (data) { var p = data.puzzle || data, g = data.game || {}; if (!p.solution || !p.initialPly || !g.pgn || !window.Chess) throw new Error('Formato diario incompleto'); var moves = g.pgn.replace(/\[[^\]]*\]/g, '').replace(/\{[^}]*\}/g, '').replace(/\([^)]*\)/g, '').replace(/\d+\.(\.\.)?/g, '').trim().split(/\s+/).filter(Boolean), c = new window.Chess(); moves.slice(0, p.initialPly).forEach(function (san) { c.move(san, { sloppy: true }); }); return { id: p.id, titulo: 'Ejercicio diario de Lichess', dificultad: 'Rating ' + (p.rating || '—'), categoria: 'Táctica · ' + (p.plays || 0) + ' intentos', fen: c.fen(), solucion: p.solution, pistas: ['Buscá jaques, capturas y amenazas forcing antes de mover.'], explicacion: 'Solución verificada por la secuencia pública del ejercicio diario.', fuente: 'Lichess Puzzle API · ' + (p.id || 'diario'), opponentFirst: true }; }); }
+  function mount(root, prefix) { var meta = document.querySelector('#' + prefix + '-meta'), title = document.querySelector('#' + prefix + '-titulo'), msg = document.querySelector('#' + prefix + '-mensaje'), list = document.querySelector('#' + prefix + '-movimientos'), hint = document.querySelector('#' + prefix + '-pista'), reset = document.querySelector('#' + prefix + '-reiniciar'), solution = document.querySelector('#' + prefix + '-solucion'), exercise, game, selected, targets, step, finished;
+    if (!hint) { hint = document.createElement('button'); hint.type = 'button'; hint.id = prefix + '-pista'; hint.className = 'button button-quiet'; hint.textContent = 'Pista'; reset.parentNode.insertBefore(hint, reset); } if (!solution) { solution = document.createElement('button'); solution.type = 'button'; solution.id = prefix + '-solucion'; solution.className = 'button button-primary'; solution.textContent = 'Ver solución'; reset.parentNode.insertBefore(solution, reset); }
+    function status(t, k) { msg.textContent = t; msg.className = 'status-message' + (k ? ' ' + k : ''); }
+    function load(ex) { exercise = ex; game = engine(ex.fen); selected = null; targets = []; step = 0; finished = false; title.textContent = ex.titulo; meta.textContent = ex.dificultad + ' · ' + ex.categoria; list.textContent = ''; status(ex.opponentFirst ? 'El rival inicia la combinación. Encontrá la respuesta.' : 'Tu turno: encontrá la jugada definida para este ejercicio.'); if (ex.opponentFirst && ex.solucion.length) { game.move(ex.solucion[0]); step = 1; list.textContent = 'Rival: ' + ex.solucion[0]; } render(root, game, selected, targets, click); }
+    function click(sq) { if (finished) return; if (selected) { if (targets.indexOf(sq) < 0) { selected = null; targets = []; render(root, game, selected, targets, click); return; } var u = selected + sq; if (exercise.solucion[step] !== u) { status('Movimiento legal, pero incorrecto para este ejercicio.', 'error'); selected = null; targets = []; render(root, game, selected, targets, click); return; } if (!game.move(u)) { status('Esa jugada no es legal en la posición actual.', 'error'); return; } step++; list.textContent += (list.textContent ? ' · ' : '') + u; selected = null; targets = []; if (step >= exercise.solucion.length) { finished = true; status('¡Correcto! ' + (exercise.explicacion || ''), 'success'); } else { game.move(exercise.solucion[step]); list.textContent += ' · Rival: ' + exercise.solucion[step]; step++; status(step >= exercise.solucion.length ? '¡Correcto! ' + (exercise.explicacion || '') : 'Respuesta del rival ejecutada. Encontrá la siguiente jugada.', step >= exercise.solucion.length ? 'success' : ''); finished = step >= exercise.solucion.length; } render(root, game, selected, targets, click); } else { var a = coords(sq), p = game.board()[a[0]][a[1]]; if (p && color(p) === game.turn()) { selected = sq; targets = game.moves(sq); render(root, game, selected, targets, click); } } }
+    if (reset) reset.addEventListener('click', function () { load(exercise); }); if (hint) hint.addEventListener('click', function () { var u = exercise.solucion[step]; status(u ? 'Pista: considerá mover la pieza de ' + u.slice(0, 2) + ' hacia ' + u.slice(2, 4) + '.' : 'No hay más pistas disponibles.', 'hint'); }); if (solution) solution.addEventListener('click', function () { status('Solución: ' + exercise.solucion.join(' · ') + (exercise.explicacion ? '. ' + exercise.explicacion : ''), 'hint'); }); load(localExercises[0]); if (prefix === 'entrenar') { var fetchIt = function () { fetchDaily().then(load).catch(function () { status('No se pudo cargar el ejercicio diario. Se muestra un ejercicio local de respaldo.', 'error'); }); }; if (window.Chess) fetchIt(); else { var script = document.createElement('script'); script.src = 'https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js'; script.onload = fetchIt; script.onerror = function () { status('No se pudo conectar con el ejercicio diario. El ejercicio local sigue disponible.', 'error'); }; document.head.appendChild(script); } } }
+  window.AjedrezChess = { fromFen: fallback, make: makeFallback };
+  var root = document.querySelector('#tablero'); if (root) mount(root, 'ejercicio'); var training = document.querySelector('#tablero-entrenar'); if (training) mount(training, 'entrenar');
 }());
