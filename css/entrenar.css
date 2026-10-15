@@ -1,0 +1,27 @@
+.training-hero { background: linear-gradient(135deg, var(--navy-2), var(--navy)); }
+.training-jump-links { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 1.8rem; }
+.training-section { background: var(--cream); }
+.lichess-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; align-items: start; }
+.lichess-card { overflow: hidden; padding: clamp(1rem, 2.5vw, 1.5rem); scroll-margin-top: 6rem; }
+.lichess-card-wide { grid-column: 1 / -1; }
+.lichess-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.lichess-card h3 { color: var(--navy); font-size: clamp(1.35rem, 2.4vw, 1.8rem); margin-top: .25rem; }
+.tool-kicker { color: var(--green-dark); font-size: .72rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+.tool-symbol { display: grid; place-items: center; flex: 0 0 2.5rem; height: 2.5rem; border-radius: 50%; color: var(--navy); background: rgba(200,164,93,.24); font-size: 1.35rem; }
+.lichess-frame { position: relative; width: 100%; margin-top: 1.1rem; overflow: hidden; border: 1px solid rgba(8,24,38,.16); border-radius: var(--radius-sm); background: #171d21; box-shadow: 0 12px 30px rgba(8,24,38,.12); }
+.frame-tv, .frame-training { aspect-ratio: 10 / 11; }
+.frame-analysis { aspect-ratio: 4 / 3; }
+.lichess-frame iframe { display: block; position: relative; z-index: 1; width: 100%; height: 100%; min-height: 0; border: 0; }
+.frame-loading { position: absolute; inset: 0; display: grid; place-items: center; padding: 1rem; color: rgba(255,255,255,.66); font-size: .88rem; background: #171d21; }
+.lichess-frame.is-loaded .frame-loading { opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+.lichess-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-top: .9rem; }
+.embed-status { color: var(--muted); font-size: .78rem; }
+.external-link { color: var(--green-dark); font-size: .86rem; font-weight: 800; }
+.external-link:hover { color: var(--blue); text-decoration: underline; text-underline-offset: .2em; }
+.coach-extension { padding-top: 0; }
+.coach-extension-card { display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding: clamp(1.4rem, 4vw, 2.4rem); border: 1px solid rgba(113,142,114,.35); border-radius: var(--radius); background: linear-gradient(120deg, rgba(113,142,114,.12), rgba(255,253,248,.72)); }
+.coach-extension-card h2 { max-width: 37rem; font-size: clamp(1.7rem, 3vw, 2.5rem); }
+.coach-extension-card p:last-child { max-width: 43rem; margin-bottom: 0; }
+.coach-extension-mark { color: var(--green-dark); font-size: 4rem; opacity: .65; }
+@media (max-width: 700px) { .lichess-grid { grid-template-columns: 1fr; } .lichess-card-wide { grid-column: auto; } .coach-extension-card { align-items: flex-start; } .coach-extension-mark { display: none; } }
+@media (max-width: 560px) { .training-jump-links .button { width: 100%; } .frame-analysis { aspect-ratio: 4 / 3; } }
