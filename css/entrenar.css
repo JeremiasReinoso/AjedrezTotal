@@ -11,6 +11,12 @@
 .lichess-frame { position: relative; width: 100%; margin-top: 1.1rem; overflow: hidden; border: 1px solid rgba(8,24,38,.16); border-radius: var(--radius-sm); background: #171d21; box-shadow: 0 12px 30px rgba(8,24,38,.12); }
 .frame-tv, .frame-training { aspect-ratio: 10 / 11; }
 .frame-analysis { aspect-ratio: 4 / 3; }
+.analysis-message { margin-top: 1.1rem; padding: .8rem 1rem; border: 1px dashed var(--line); border-radius: 9px; color: var(--muted); }
+.analysis-message.loading { color: var(--navy); background: rgba(200,164,93,.12); }
+.analysis-message.success { color: var(--green-dark); background: rgba(113,142,114,.12); }
+.analysis-message.hint { color: var(--navy); background: rgba(200,164,93,.16); }
+.analysis-message.error { color: var(--red); background: rgba(167,73,62,.08); }
+.game-viewer[hidden] { display: none; }
 .lichess-frame iframe { display: block; position: relative; z-index: 1; width: 100%; height: 100%; min-height: 0; border: 0; }
 .frame-loading { position: absolute; inset: 0; display: grid; place-items: center; padding: 1rem; color: rgba(255,255,255,.66); font-size: .88rem; background: #171d21; }
 .lichess-frame.is-loaded .frame-loading { opacity: 0; pointer-events: none; transition: opacity .25s ease; }
