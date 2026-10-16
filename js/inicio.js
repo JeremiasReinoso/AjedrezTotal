@@ -12,7 +12,11 @@
   var exerciseGrid = document.querySelector('#home-exercises');
   if (coachCount) coachCount.textContent = coaches.length;
   if (coachCount && coachCount.nextElementSibling) {
-    coachCount.nextElementSibling.textContent = 'entrenadores publicados y demostrativos';
+    coachCount.nextElementSibling.textContent = 'entrenadores publicados, pendientes y demostrativos';
+  }
+  var coachSummary = document.querySelector('.home-feature[href="entrenadores/index.html"] p');
+  if (coachSummary) {
+    coachSummary.textContent = 'Explorá especialidades, niveles y modalidades en perfiles publicados, pendientes y de demostración.';
   }
   if (exerciseCount) exerciseCount.textContent = exercises.length;
   if (coachGrid) {
@@ -28,9 +32,9 @@
         '<div class="coach-avatar" style="background:' +
         AjedrezUI.initialsColor(coach.iniciales) + '" aria-hidden="true">' +
         AjedrezUI.escape(coach.iniciales) + '</div>';
-      var label = coach.publicado ? 'Entrenador · Perfil publicado' :
-        AjedrezUI.escape(coach.especialidades[0] || 'Ajedrez');
-      var action = coach.publicado ? 'Ver perfil' : 'Consultar perfil';
+      var label = coach.pendiente ? 'Perfil en preparación' : coach.publicado ?
+        'Entrenador · Perfil publicado' : AjedrezUI.escape(coach.especialidades[0] || 'Ajedrez');
+      var action = coach.publicado || coach.pendiente ? 'Ver perfil' : 'Consultar perfil';
       return '<article class="card coach-card">' + image + '<div class="card-pad">' +
         '<span class="tag">' + label + '</span><h3>' + AjedrezUI.escape(coach.nombre) +
         '</h3><p class="muted">' + AjedrezUI.escape(coach.bio) + '</p>' +
