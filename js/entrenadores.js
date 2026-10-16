@@ -68,8 +68,12 @@
     return '<article class="card coach-card">' + generarMedia(coach) +
       '<div class="card-pad"><span class="tag">Perfil en preparación</span><h3>' +
       AjedrezUI.escape(coach.nombre) + '</h3><p>' + AjedrezUI.escape(coach.bio) +
-      '</p><a class="button button-dark" href="perfil.html?id=' +
-      encodeURIComponent(coach.id) + '">Ver perfil</a></div></article>';
+      '</p><div class="coach-actions"><a class="button button-dark" href="perfil.html?id=' +
+      encodeURIComponent(coach.id) + '">Ver perfil</a>' +
+      (coach.whatsapp ? '<a class="button button-quiet" href="' +
+        AjedrezUI.escape(coach.whatsapp) +
+        '" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a>' : '') +
+      '</div></div></article>';
   }
 
   /** Devuelve el marcado de tarjeta adecuado según el estado del perfil. */
