@@ -26,6 +26,8 @@ Para agregar un ejercicio editorial, sumá un objeto a `window.AjedrezDatos.ejer
 
 ## Partidas de entrenadores
 
-Los perfiles viven en `datos/entrenadores.js`. Cada registro admite `lichessUsername`, `especialidades`, `estadoPublicacion` y `descripcion`. El registro de César Ariel Gerez está preparado con `lichessUsername: ''`; debe completarse únicamente con el usuario público confirmado. Mientras esté vacío, la web no consulta Lichess y muestra un estado de preparación.
+Los usuarios de la sección viven en `window.AjedrezDatos.partidasEntrenadores` dentro de `datos/entrenadores.js`. Para agregar otro perfil basta con sumar `{ id, lichessUsername, nombre }`; no se inventan datos editoriales ni credenciales.
 
-`js/partidas-entrenadores.js` consulta `GET /api/games/user/{username}` como `application/x-ndjson`, con un máximo de 12 partidas y sin credenciales. Filtra variantes no estándar, muestra los metadatos recibidos y reconstruye las posiciones con chess.js en un visor local. Las partidas no afectan el ELO de ejercicios. La API pública depende de CORS, conectividad y disponibilidad de la cuenta; el botón de reintento maneja los errores sin bucles.
+`js/partidas-entrenadores.js` consulta `GET /api/games/user/{username}` como `application/x-ndjson`, en una cola de una solicitud por vez, con un máximo inicial de 8 partidas. Usa `until` para cargar partidas más antiguas, filtra variantes no estándar, cachea cada cuenta durante 10 minutos y reconstruye las posiciones con chess.js en un visor local. Las partidas no afectan el ELO de ejercicios. La API pública depende de CORS, conectividad y disponibilidad de la cuenta; los estados de error y reintento son independientes por entrenador.
+
+Verificación realizada el 16/10/2026: `GCA91`, `HulkSierra` y `oiki76778` existen y devolvieron partidas reales desde la API con un User-Agent de navegador. La API responde `404` a algunos clientes automatizados con User-Agent genérico; la página publicada usa el User-Agent normal del navegador y muestra un mensaje de reintento si Lichess aplica ese bloqueo. No se incorporó backend ni credenciales.
