@@ -1,12 +1,12 @@
 /**
  * Define los perfiles de entrenadores consumidos por los módulos de inicio,
  * catálogo y perfil; los datos se mantienen localmente en este archivo.
- * El registro publicado representa una ficha real y los restantes son ejemplos ficticios.
+ * Los perfiles pendientes esperan información y los restantes ejemplos son ficticios.
  */
 window.AjedrezDatos = window.AjedrezDatos || {};
 window.AjedrezDatos.entrenadores = [
   { id: 'cesar-ariel-gerez', nombre: 'César Ariel Gerez', iniciales: 'CG', publicado: true, imagen: 'entrenadores/PerfilEntrenadores/profecesar.jpeg', bio: 'Contactá al entrenador para consultar sobre sus clases y modalidades de enseñanza.', whatsapp: 'https://wa.me/542945638915?text=Hola%2C%20C%C3%A9sar.%20Te%20contacto%20desde%20AjedrezTotal%20porque%20me%20interesa%20consultar%20sobre%20tus%20clases%20de%20ajedrez.' },
   { id: 'jeremias-reinoso', nombre: 'Jeremias Reinoso', iniciales: 'JR', publicado: true, imagen: 'entrenadores/PerfilEntrenadores/ProfeJere.png', bio: 'Contactá al entrenador para consultar sobre sus clases y modalidades de enseñanza.', whatsapp: 'https://wa.me/542944312022?text=Hola%2C%20Jeremias.%20Te%20contacto%20desde%20AjedrezTotal%20para%20consultar%20sobre%20tus%20clases%20de%20ajedrez.' },
-  { id: 'martin-sosa', nombre: 'Martín Sosa', iniciales: 'MS', destacado: true, ficticio: true, bio: 'Ejemplo editorial de un perfil dedicado a táctica, cálculo y preparación para competir.', titulos: 'Datos de demostración sin títulos verificados', experiencia: 'Contenido de muestra para la plataforma', especialidades: ['Táctica', 'Competición'], niveles: ['Intermedio', 'Avanzado'], modalidad: ['Online', 'Presencial'], idiomas: ['Español', 'English'], disponibilidad: 'Consultar disponibilidad', tarifa: 'A convenir', contacto: 'mailto:contacto@ejemplo.invalid' },
+  { id: 'walter-sierra', nombre: 'Walter Sierra', iniciales: 'WS', pendiente: true, destacado: true, bio: 'Pronto vas a encontrar aquí información sobre sus clases.' },
   { id: 'sofia-rios', nombre: 'Sofía Ríos', iniciales: 'SR', destacado: false, ficticio: true, bio: 'Ficha ficticia para ilustrar una especialista en finales y acompañamiento para adultos.', titulos: 'Pendiente de revisión documental', experiencia: 'Ejemplo de experiencia declarada por una profesional', especialidades: ['Finales', 'Adultos'], niveles: ['Principiante', 'Intermedio'], modalidad: ['Presencial'], idiomas: ['Español'], disponibilidad: 'Consultar disponibilidad', tarifa: 'A convenir', contacto: 'mailto:contacto@ejemplo.invalid' }
 ];
