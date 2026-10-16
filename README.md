@@ -9,7 +9,8 @@ Plataforma web estática de aprendizaje, entrenamiento y difusión del ajedrez. 
 - Formulario preparado para proveedor externo; sin endpoint configurado no envía datos.
 - Biblioteca editorial con búsqueda y filtro.
 - Agenda de comunidad con estado vacío honesto; no hay eventos verificados cargados.
-- Tablero de ejercicios con posiciones FEN, movimientos legales básicos, solución comparada, reinicio y progreso de sesión.
+- Tablero de ejercicios con puzzles reales de Lichess, historial anti-repetición, respaldo local, solución comparada, reinicio y ELO independiente.
+- Sección de partidas de entrenadores preparada para cuentas públicas de Lichess, con visor PGN/NDJSON dentro del sitio.
 - Limitación declarada: el tablero aún no es un motor reglamentario completo; falta interfaz y cobertura completa de enroque, promoción, captura al paso y detección editorial de mate/ahogado.
 
 ## Uso
