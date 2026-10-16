@@ -39,7 +39,11 @@
         '<span class="tag">' + label + '</span><h3>' + AjedrezUI.escape(coach.nombre) +
         '</h3><p class="muted">' + AjedrezUI.escape(coach.bio) + '</p>' +
         '<a class="button button-dark" href="entrenadores/perfil.html?id=' +
-        encodeURIComponent(coach.id) + '">' + action + '</a></div></article>';
+        encodeURIComponent(coach.id) + '">' + action + '</a>' +
+        (coach.whatsapp ? '<a class="button button-quiet" href="' +
+          AjedrezUI.escape(coach.whatsapp) +
+          '" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a>' : '') +
+        '</div></article>';
     }).join('');
   }
   if (exerciseGrid) exerciseGrid.innerHTML = exercises.slice(0, 3).map(function (exercise) {
