@@ -1,8 +1,11 @@
-/* Partidas públicas de entrenadores: API de Lichess + reproductor local. */
+/* Partidas públicas de entrenadores: API de Lichess + tablero de análisis compartido. */
 (function () {
   'use strict';
   var root = document.getElementById('entrenadores-partidas');
   var jump = document.getElementById('ver-partidas-entrenador');
+  var analysisCard = document.getElementById('analisis-tablero');
+  var analysisFrame = document.getElementById('tablero-analisis-lichess');
+  var analysisLink = document.getElementById('enlace-analisis-lichess');
   var coaches = (window.AjedrezDatos && window.AjedrezDatos.partidasEntrenadores) || [];
   var api = 'https://lichess.org/api/games/user/';
   var max = 8, cacheTime = 10 * 60 * 1000, cachePrefix = 'ajedrez-total-coach-games-v2-';
@@ -51,14 +54,45 @@
     String(game.moves || '').trim().split(/\s+/).filter(Boolean).forEach(function (san) { var move = chess.move(san, { sloppy: true }); if (move) result.push({ fen: chess.fen(), san: move.san, uci: move.from + move.to + (move.promotion || '') }); });
     if (result.length === 1 && game.moves) throw Error('PGN o jugadas inválidas'); return result;
   }
+  function pgnForAnalysis(game, meta, pos) {
+    var initialFen = game.initialFen || '';
+    var initialChess = new window.Chess(initialFen || undefined);
+    var fenParts = initialChess.fen().split(' '), moveNumber = Number(fenParts[5]) || 1;
+    var blackToMove = fenParts[1] === 'b', moves = [];
+    pos.slice(1).forEach(function (item, i) {
+      if (!blackToMove || i === 0) moves.push(moveNumber + (blackToMove ? '...' : '.'));
+      moves.push(item.san);
+      if (blackToMove) moveNumber += 1;
+      blackToMove = !blackToMove;
+    });
+    var date = game.createdAt ? new Date(game.createdAt) : null;
+    var dateTag = date ? date.getUTCFullYear() + '.' + String(date.getUTCMonth() + 1).padStart(2, '0') + '.' + String(date.getUTCDate()).padStart(2, '0') : '????.??.??';
+    var pgnResult = meta.result === '1-0' || meta.result === '0-1' ? meta.result : meta.result === '½-½' ? '1/2-1/2' : '*';
+    var headers = [
+      '[Event "Partida de entrenador"]',
+      '[Site "https://lichess.org/' + (game.id || '') + '"]',
+      '[Date "' + dateTag + '"]',
+      '[White "' + meta.white.replace(/([\\"])/g, '\\$1') + '"]',
+      '[Black "' + meta.black.replace(/([\\"])/g, '\\$1') + '"]',
+      '[Result "' + pgnResult + '"]'
+    ];
+    if (initialFen) headers.push('[SetUp "1"]', '[FEN "' + initialChess.fen() + '"]');
+    return headers.join('\n') + '\n\n' + moves.join(' ') + ' ' + pgnResult;
+  }
+  function loadIntoAnalysis(game, meta, pos) {
+    if (!analysisFrame) return;
+    var encodedPgn = encodeURIComponent(pgnForAnalysis(game, meta, pos));
+    analysisFrame.src = 'https://lichess.org/analysis/pgn/' + encodedPgn;
+    if (analysisLink) analysisLink.href = analysisFrame.src;
+    analysisFrame.title = 'Análisis de la partida: ' + meta.white + ' — ' + meta.black;
+    var frame = analysisFrame.closest('.lichess-frame');
+    if (frame) frame.classList.remove('is-loaded');
+    if (analysisCard) analysisCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
   function openGame(coach, index) {
     var s = state(coach), game = s.games[index], m = gameMeta(game, coach), pos;
     try { if (!window.Chess) throw Error('No se cargó el visor de ajedrez'); pos = positions(game); } catch (e) { setStatus('Esta partida no se puede reproducir porque sus jugadas no tienen un formato válido.', 'error'); return; }
-    var at = 0;
-    root.innerHTML = '<div class="game-viewer"><div class="game-viewer-heading"><div><span class="tag">' + esc(m.coach + ' · ' + m.white + ' — ' + m.black) + '</span><h4>Reproducción de partida</h4></div><button class="button button-quiet" id="volver-partidas" type="button">← Volver a la lista</button></div><div class="game-viewer-grid"><div><div id="partida-tablero" class="chessboard game-board" aria-label="Tablero de la partida"></div><p class="game-turn" id="game-turn" role="status"></p><div class="game-controls"><button class="button button-quiet" id="game-first" type="button" aria-label="Primera jugada">|&lt;</button><button class="button button-quiet" id="game-prev" type="button" aria-label="Jugada anterior">‹</button><button class="button button-primary" id="game-restart" type="button">Reiniciar</button><button class="button button-quiet" id="game-next" type="button" aria-label="Siguiente jugada">›</button><button class="button button-quiet" id="game-last" type="button" aria-label="Última jugada">&gt;|</button></div></div><div><p class="muted"><strong>' + esc(m.white) + ' — ' + esc(m.black) + '</strong><br>' + esc(m.result + ' · ' + m.date + ' · ' + m.speed) + '<br>' + esc(m.opening) + '</p><div class="move-list game-notation" id="game-notation" aria-label="Lista de jugadas"></div><a class="external-link" href="https://lichess.org/' + esc(m.id) + '" target="_blank" rel="noopener noreferrer">Fuente original en Lichess ↗</a></div></div></div>';
-    function draw() { var board = document.getElementById('partida-tablero'), chess = new window.Chess(pos[at].fen), glyphs = { p:'♟',r:'♜',n:'♞',b:'♝',q:'♛',k:'♚',P:'♙',R:'♖',N:'♘',B:'♗',Q:'♕',K:'♔' }; board.innerHTML = ''; chess.board().forEach(function (row, r) { row.forEach(function (piece, c) { var square = document.createElement('span'); square.className = 'square ' + ((r + c) % 2 ? 'dark' : 'light'); if (at > 0 && pos[at].uci && ((r === 8 - Number(pos[at].uci.charAt(3)) && c === 'abcdefgh'.indexOf(pos[at].uci.charAt(2))) || (r === 8 - Number(pos[at].uci.charAt(1)) && c === 'abcdefgh'.indexOf(pos[at].uci.charAt(0))))) square.classList.add('last-move'); if (piece) { square.textContent = glyphs[piece.color === 'w' ? piece.type.toUpperCase() : piece.type]; square.classList.add(piece.color === 'w' ? 'piece-white' : 'piece-black'); } board.appendChild(square); }); }); document.getElementById('game-turn').textContent = 'Jugada ' + (at ? Math.ceil(at / 2) : 0) + ' · Turno de ' + (chess.turn() === 'w' ? 'blancas' : 'negras'); document.getElementById('game-notation').innerHTML = pos.slice(1).map(function (item, i) { return '<button type="button" class="move-chip ' + (i + 1 === at ? 'is-current' : '') + '" data-ply="' + (i + 1) + '">' + (i % 2 === 0 ? '<b>' + (Math.floor(i / 2) + 1) + '.</b> ' : '') + esc(item.san) + '</button>'; }).join(''); document.querySelectorAll('.move-chip').forEach(function (b) { b.addEventListener('click', function () { at = Number(b.dataset.ply); draw(); }); }); }
-    function go(n) { at = Math.max(0, Math.min(pos.length - 1, n)); draw(); }
-    document.getElementById('volver-partidas').addEventListener('click', render); document.getElementById('game-first').addEventListener('click', function () { go(0); }); document.getElementById('game-prev').addEventListener('click', function () { go(at - 1); }); document.getElementById('game-next').addEventListener('click', function () { go(at + 1); }); document.getElementById('game-last').addEventListener('click', function () { go(pos.length - 1); }); document.getElementById('game-restart').addEventListener('click', function () { go(0); }); draw();
+    loadIntoAnalysis(game, m, pos);
   }
   if (jump) jump.addEventListener('click', function () { root.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); });
   if (!coaches.length) { setStatus('No hay entrenadores configurados para mostrar.'); return; }
