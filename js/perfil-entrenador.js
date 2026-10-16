@@ -1,6 +1,6 @@
 /**
  * Renderiza el perfil seleccionado desde la URL usando datos locales de entrenadores.
- * Distingue la ficha publicada, con contacto por WhatsApp, de las fichas ficticias de demostración.
+ * Distingue perfiles publicados, pendientes de información y fichas ficticias de demostración.
  */
 (function () {
   'use strict';
@@ -9,7 +9,8 @@
   var head = document.querySelector('#perfil-encabezado');
   var body = document.querySelector('#perfil-contenido');
   if (!coach) { head.innerHTML = '<h1>Perfil no encontrado</h1><p>El enlace puede estar desactualizado.</p>'; return; }
-  if (coach.publicado) renderizarPerfilPublicado(coach, head, body);
+  if (coach.pendiente) renderizarPerfilPendiente(coach, head, body);
+  else if (coach.publicado) renderizarPerfilPublicado(coach, head, body);
   else renderizarPerfilFicticio(coach, head, body);
 
   /** Genera el marcado de la fotografía publicada o un avatar con iniciales como alternativa. */
@@ -37,6 +38,19 @@
       '<h2>Contacto</h2><p>Escribí por WhatsApp para consultar disponibilidad y modalidad de clases.</p>' +
       '<a class="button button-primary" href="' + AjedrezUI.escape(coach.whatsapp) +
       '" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a></aside>';
+  }
+
+  /** Renderiza un perfil pendiente sin inventar información ni datos de contacto. */
+  function renderizarPerfilPendiente(coach, header, content) {
+    document.title = coach.nombre + ' — AjedrezTotal';
+    header.innerHTML = '<div style="display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap">' +
+      '<div class="profile-avatar" style="background:' +
+      AjedrezUI.initialsColor(coach.iniciales) + '">' + generarAvatar(coach) +
+      '</div><div><p class="eyebrow">Perfil en preparación</p><h1>' +
+      AjedrezUI.escape(coach.nombre) + '</h1><p>' + AjedrezUI.escape(coach.bio) +
+      '</p></div></div>';
+    content.innerHTML = '<article class="card card-pad"><h2>Información pendiente</h2><p>' +
+      'Estamos preparando los detalles de este perfil.</p></article>';
   }
 
   /** Renderiza una ficha ficticia con sus datos de demostración, sin presentarla como publicada. */
