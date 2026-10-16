@@ -1,6 +1,6 @@
 /**
  * Filtra y representa el catálogo con los perfiles de datos/entrenadores.js.
- * Los perfiles publicados llevan a contacto por WhatsApp; los ficticios se muestran como demostración.
+ * Los perfiles publicados llevan a contacto por WhatsApp; los pendientes y ficticios tienen vistas propias.
  */
 (function () {
   'use strict';
@@ -11,6 +11,10 @@
   var mode = document.querySelector('#filtro-modalidad');
   var specialty = document.querySelector('#filtro-especialidad');
   var order = document.querySelector('#ordenar');
+  var introduction = document.querySelector('.page-hero .container h1 + p');
+  if (introduction) {
+    introduction.textContent = 'Consultá perfiles publicados, fichas en preparación y ejemplos ficticios.';
+  }
 
   /** Genera el avatar con fotografía y reserva las iniciales como alternativa. */
   function generarMedia(coach) {
@@ -59,8 +63,18 @@
       encodeURIComponent(coach.id) + '">Ver perfil</a></div></article>';
   }
 
-  /** Devuelve el marcado de tarjeta adecuado según si el perfil está publicado. */
+  /** Muestra una ficha pendiente sin atribuirle datos que todavía no se confirmaron. */
+  function tarjetaPendiente(coach) {
+    return '<article class="card coach-card">' + generarMedia(coach) +
+      '<div class="card-pad"><span class="tag">Perfil en preparación</span><h3>' +
+      AjedrezUI.escape(coach.nombre) + '</h3><p>' + AjedrezUI.escape(coach.bio) +
+      '</p><a class="button button-dark" href="perfil.html?id=' +
+      encodeURIComponent(coach.id) + '">Ver perfil</a></div></article>';
+  }
+
+  /** Devuelve el marcado de tarjeta adecuado según el estado del perfil. */
   function generarTarjeta(coach) {
+    if (coach.pendiente) return tarjetaPendiente(coach);
     return coach.publicado ? tarjetaPublicada(coach) : tarjetaFicticia(coach);
   }
 
