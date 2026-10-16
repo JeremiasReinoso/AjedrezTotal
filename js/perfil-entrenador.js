@@ -50,7 +50,11 @@
       AjedrezUI.escape(coach.nombre) + '</h1><p>' + AjedrezUI.escape(coach.bio) +
       '</p></div></div>';
     content.innerHTML = '<article class="card card-pad"><h2>Información pendiente</h2><p>' +
-      'Estamos preparando los detalles de este perfil.</p></article>';
+      'Estamos preparando los detalles de este perfil.</p></article>' +
+      (coach.whatsapp ? '<aside class="card card-pad"><h2>Contacto</h2>' +
+        '<p>Escribí por WhatsApp para consultar sobre sus clases.</p>' +
+        '<a class="button button-primary" href="' + AjedrezUI.escape(coach.whatsapp) +
+        '" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a></aside>' : '');
   }
 
   /** Renderiza una ficha ficticia con sus datos de demostración, sin presentarla como publicada. */
