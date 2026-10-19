@@ -1,5 +1,5 @@
 /**
  * Centraliza la identidad y los puntos de integración del sitio para los módulos JavaScript.
- * El endpoint vacío indica que el formulario solo se valida localmente, sin envío a un proveedor.
+ * Centraliza los puntos de integración del sitio.
  */
-window.AjedrezConfig = { nombre: 'AjedrezTotal', dominio: '', contacto: 'contacto@ejemplo.invalid', formularioEndpoint: '', version: '0.1.0' };
+window.AjedrezConfig = { nombre: 'AjedrezTotal', dominio: '', contacto: 'reinosojeremias0@gmail.com', formularioEndpoint: '/api/contacto-entrenador', version: '0.1.0' };
