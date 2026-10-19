@@ -6,7 +6,7 @@ Plataforma web estática de aprendizaje, entrenamiento y difusión del ajedrez. 
 
 - Portada responsive con navegación accesible.
 - Catálogo de entrenadores con búsqueda, filtros, ordenamiento y detalle. Los tres perfiles son ficticios.
-- Formulario preparado para proveedor externo; sin endpoint configurado no envía datos.
+- Formulario de incorporación conectado a una función serverless que envía las solicitudes por correo.
 - Biblioteca editorial con búsqueda y filtro.
 - Agenda de comunidad con estado vacío honesto; no hay eventos verificados cargados.
 - Tablero de ejercicios con puzzles reales de Lichess, historial anti-repetición, respaldo local, solución comparada, reinicio y ELO independiente.
