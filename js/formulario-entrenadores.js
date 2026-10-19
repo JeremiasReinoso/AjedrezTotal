@@ -1,6 +1,5 @@
 /**
- * Valida localmente el formulario para incorporar entrenadores y muestra su estado.
- * Lee el endpoint de js/configuracion.js; sin proveedor configurado no realiza un envío real.
+ * Valida y envía el formulario para incorporar entrenadores al backend configurado.
  */
 (function () {
 	'use strict';
@@ -26,8 +25,32 @@
 			return;
 		}
 
-		status.textContent = 'El formulario está listo para enviarse, pero la integración ' +
-			'requiere completar la configuración del proveedor.';
+		var button = form.querySelector('button[type="submit"]');
+		var payload = Object.fromEntries(new FormData(form).entries());
+		button.disabled = true;
+		button.textContent = 'Enviando…';
+		status.textContent = 'Enviando tu solicitud…';
 		status.className = 'status-message';
+
+		fetch(endpoint, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+			body: JSON.stringify(payload)
+		}).then(function (response) {
+			return response.json().catch(function () { return {}; }).then(function (body) {
+				if (!response.ok) throw Error(body.error || 'No se pudo enviar la solicitud.');
+				return body;
+			});
+		}).then(function () {
+			status.textContent = 'Solicitud enviada. Gracias; vamos a revisar tu información.';
+			status.className = 'status-message success';
+			form.reset();
+		}).catch(function (error) {
+			status.textContent = error.message || 'No se pudo enviar la solicitud. Intentá nuevamente.';
+			status.className = 'status-message error';
+		}).finally(function () {
+			button.disabled = false;
+			button.textContent = 'Enviar solicitud';
+		});
 	});
 }());
