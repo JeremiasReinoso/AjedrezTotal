@@ -12,10 +12,11 @@ Plataforma web estática de aprendizaje, entrenamiento y difusión del ajedrez. 
 - Tablero de ejercicios con puzzles reales de Lichess, historial anti-repetición, respaldo local, solución comparada, reinicio y ELO independiente.
 - Sección de partidas de entrenadores preparada para cuentas públicas de Lichess, con visor PGN/NDJSON dentro del sitio.
 - Limitación declarada: el tablero aún no es un motor reglamentario completo; falta interfaz y cobertura completa de enroque, promoción, captura al paso y detección editorial de mate/ahogado.
+- API serverless con PostgreSQL para cuentas, sesiones y solicitudes de formularios.
 
 ## Uso
 
-Abrí `index.html` o publicá la carpeta en un alojamiento estático. La documentación operativa está en `docs/`.
+Abrí `index.html` o publicá la carpeta en Vercel. Para habilitar cuentas y persistencia, vinculá una base PostgreSQL, configurá las variables de `.env.example` y ejecutá `npm install` seguido de `npm run db:apply`. La documentación operativa está en `docs/`.
 
 ## Verificación ejecutada
 
