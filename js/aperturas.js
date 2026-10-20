@@ -1,0 +1,36 @@
+(function () {
+  'use strict';
+  var data = window.AjedrezDatos.aperturas || [], selected = data[0], game, line = [], branch = false, selectedSquare = null;
+  var $ = function (s) { return document.querySelector(s); }, esc = function (v) { return String(v).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); };
+  function apiUrl(opening) { var moves = line.length ? line.map(function (m) { return m.san; }) : opening.principal.slice(0, 2); return 'https://explorer.lichess.ovh/masters?play=' + encodeURIComponent(moves.join(' ')); }
+  function renderCatalog() {
+    var q = ($('#filtro-apertura').value || '').toLowerCase(), family = $('#filtro-familia').value, first = $('#filtro-primera').value;
+    $('#aperturas-catalogo').innerHTML = data.filter(function (x) { return (!q || (x.nombre + ' ' + x.ideas).toLowerCase().indexOf(q) >= 0) && (!family || x.familia === family) && (!first || x.primera.indexOf(first) >= 0); }).map(function (x) { return '<button class="opening-card ' + (x.id === selected.id ? 'is-selected' : '') + '" data-opening="' + x.id + '"><span class="tag">' + esc(x.familia) + '</span><strong>' + esc(x.nombre) + '</strong><small>' + esc(x.primera) + ' · ' + x.eco + '</small></button>'; }).join('') || '<p class="empty-state">No hay aperturas que coincidan con esos filtros.</p>';
+    document.querySelectorAll('[data-opening]').forEach(function (b) { b.addEventListener('click', function () { select(b.dataset.opening); }); });
+  }
+  function select(id) { selected = data.find(function (x) { return x.id === id; }) || data[0]; line = []; branch = false; selectedSquare = null; game = new Chess(); renderCatalog(); render(); loadStats(); }
+  function render() {
+    $('#apertura-titulo').textContent = selected.nombre;
+    $('#apertura-ideas').textContent = selected.ideas;
+    var board = $('#apertura-tablero'); board.innerHTML = ''; var pos = new Chess(); line.forEach(function (m) { pos.move(m); }); var fen = pos.board();
+    fen.forEach(function (row, r) { row.forEach(function (piece, c) { var square = String.fromCharCode(97 + c) + (8 - r), cell = document.createElement('button'); cell.type = 'button'; cell.dataset.square = square; cell.className = 'square ' + ((r + c) % 2 ? 'dark' : 'light') + (selectedSquare === square ? ' selected' : ''); cell.setAttribute('aria-label', square); if (piece) { cell.textContent = ({p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'})[piece.type]; cell.classList.add(piece.color === 'w' ? 'piece-white' : 'piece-black'); } cell.addEventListener('click', function () { if (!selectedSquare) { if (piece && piece.color === game.turn()) { selectedSquare = square; render(); } return; } var move = game.move({from: selectedSquare, to: square, promotion: 'q'}); if (move) { line.push(move); branch = true; } selectedSquare = null; render(); }); board.appendChild(cell); }); });
+    $('#apertura-movimientos').innerHTML = line.length ? line.map(function (m, i) { return '<span class="' + (i === line.length - 1 ? 'current-move' : '') + '">' + (i % 2 === 0 ? (Math.floor(i / 2) + 1) + '. ' : '') + esc(m.san) + '</span>'; }).join(' ') : '<span class="muted">La línea comienza en la posición inicial.</span>';
+    $('#apertura-linea').textContent = branch ? 'Variante explorada · la línea principal queda preservada en el catálogo' : 'Línea principal · ' + selected.nombre;
+    $('#apertura-estado').textContent = pos.turn() === 'w' ? 'Juegan blancas' : 'Juegan negras';
+    $('#volver-linea').hidden = !branch;
+  }
+  function play(san) { var move = game.move(san, { sloppy: true }); if (!move) return false; line.push(move); render(); return true; }
+  function playLine(moves) { game = new Chess(); line = []; selectedSquare = null; moves.forEach(play); }
+  function loadStats() {
+    var box = $('#apertura-estadisticas'); box.innerHTML = '<p class="muted">Consultando estadísticas públicas de Lichess…</p>';
+    var rateUntil = Number(localStorage.getItem('ajedrez-opening-rate-limit') || 0); if (rateUntil > Date.now()) { box.innerHTML = '<p class="notice">Lichess pidió esperar antes de otra consulta. La línea local sigue disponible.</p>'; return; }
+    var key = 'ajedrez-opening-stats-' + selected.id, cached = localStorage.getItem(key), saved = null;
+    try { saved = cached && JSON.parse(cached); } catch (_) { localStorage.removeItem(key); }
+    if (saved && Date.now() - saved.at < 3600000) return showStats(saved.value, true);
+    fetch(apiUrl(selected), { headers: { Accept: 'application/json' } }).then(function (r) { if (r.status === 429) { localStorage.setItem('ajedrez-opening-rate-limit', String(Date.now() + 60000)); throw Error('rate'); } if (r.status === 401 || r.status === 403) throw Error('auth'); if (!r.ok) throw Error('network'); return r.json(); }).then(function (value) { localStorage.setItem(key, JSON.stringify({at: Date.now(), value: value})); showStats(value, false); }).catch(function (e) { box.innerHTML = '<p class="notice">No pudimos cargar las estadísticas ahora. Podés seguir estudiando la línea local. ' + (e.message === 'rate' ? 'Lichess pidió esperar antes de otra consulta.' : e.message === 'auth' ? 'La API oficial requiere autorización para esta consulta.' : 'La fuente no respondió.') + '</p>'; });
+  }
+  function showStats(v, cached) { var total = (v.white || 0) + (v.black || 0) + (v.draws || 0); $('#apertura-estadisticas').innerHTML = '<div class="stats-grid"><span><strong>' + total.toLocaleString('es-AR') + '</strong>partidas</span><span><strong>' + (v.white || 0).toLocaleString('es-AR') + '</strong>victorias blancas</span><span><strong>' + (v.black || 0).toLocaleString('es-AR') + '</strong>victorias negras</span><span><strong>' + (v.draws || 0).toLocaleString('es-AR') + '</strong>tablas</span></div><p class="muted stats-note">Fuente: Lichess Opening Explorer' + (cached ? ' · caché local' : '') + '. Frecuencia histórica, no evaluación de motor.</p><div class="frequent-moves"><strong>Movimientos frecuentes</strong>' + (v.moves || []).slice(0, 5).map(function (m) { return '<span>' + esc(m.san) + ' · ' + Number(m.played || 0).toLocaleString('es-AR') + '</span>'; }).join('') + '</div>'; }
+  $('#filtro-apertura').addEventListener('input', renderCatalog); $('#filtro-familia').addEventListener('change', renderCatalog); $('#filtro-primera').addEventListener('change', renderCatalog);
+  $('#apertura-principal').addEventListener('click', function () { playLine(selected.principal); branch = false; render(); }); $('#apertura-alternativa').addEventListener('click', function () { playLine(selected.alternativas[0].moves); branch = true; render(); }); $('#apertura-reiniciar').addEventListener('click', function () { game = new Chess(); line = []; branch = false; selectedSquare = null; render(); }); $('#apertura-atras').addEventListener('click', function () { if (line.length) { game.undo(); line.pop(); selectedSquare = null; render(); } }); $('#apertura-adelante').addEventListener('click', function () { var next = selected.principal[line.length]; if (next) play(next); }); $('#volver-linea').addEventListener('click', function () { playLine(selected.principal.slice(0, line.length)); branch = false; render(); });
+  game = new Chess(); renderCatalog(); render(); loadStats();
+}());

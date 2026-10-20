@@ -6,15 +6,13 @@
   'use strict';
   var toggle = document.querySelector('.menu-toggle');
   var nav = document.querySelector('.nav-links');
-  if (nav && !nav.querySelector('a[href$="entrenar/index.html"]')) {
-    var exerciseLink = nav.querySelector('a[href$="ejercicios/index.html"]');
-    if (exerciseLink) {
-      var trainingLink = document.createElement('a');
-      var exercisePath = exerciseLink.getAttribute('href');
-      trainingLink.href = exercisePath.replace('ejercicios/index.html', 'entrenar/index.html');
-      trainingLink.textContent = 'Entrená y aprendé';
-      exerciseLink.insertAdjacentElement('afterend', trainingLink);
-    }
+  if (nav) {
+    var homeLink = nav.parentElement.querySelector('.brand');
+    var prefix = homeLink ? homeLink.getAttribute('href').replace(/index\.html$/, '') : '';
+    var activeLink = nav.querySelector('[aria-current]'), current = 'index';
+    if (activeLink) { var activeHref = activeLink.getAttribute('href') || ''; current = activeHref.replace(/^\.\.\//, '').replace(/\/index\.html$/, '').replace(/^index\.html$/, 'index'); if (activeHref === 'index.html' && prefix) current = location.pathname.replace(/\/$/, '').split('/').slice(-2, -1)[0]; }
+    var items = [['index.html', 'Inicio', 'index'], ['entrenadores/index.html', 'Entrenadores', 'entrenadores'], ['aperturas/index.html', 'Aperturas', 'aperturas'], ['entrenar/index.html', 'Entrená y aprendé', 'entrenar'], ['biblioteca/index.html', 'Biblioteca', 'biblioteca'], ['torneos/index.html', 'Torneos', 'torneos'], ['incorporar-entrenador/index.html', 'Sumate', 'incorporar-entrenador'], ['cuenta/index.html', 'Cuenta', 'cuenta']];
+    nav.innerHTML = items.map(function (item) { return '<a ' + (current === item[2] ? 'aria-current="page" ' : '') + (item[2] === 'incorporar-entrenador' ? 'class="button button-primary" ' : '') + 'href="' + prefix + item[0] + '">' + item[1] + '</a>'; }).join('');
   }
   if (toggle && nav) {
     toggle.addEventListener('click', function () {

@@ -76,3 +76,24 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 );
 
 CREATE INDEX IF NOT EXISTS password_reset_tokens_user_idx ON password_reset_tokens (user_id);
+
+CREATE TABLE IF NOT EXISTS tournaments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL CHECK (category IN ('presencial', 'online', 'general')),
+  event_name TEXT NOT NULL,
+  organizer TEXT NOT NULL,
+  location TEXT,
+  event_date TEXT,
+  cover_image TEXT,
+  summary TEXT NOT NULL,
+  body JSONB NOT NULL DEFAULT '{}'::jsonb,
+  official_url TEXT,
+  published BOOLEAN NOT NULL DEFAULT FALSE,
+  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS tournaments_published_date_idx ON tournaments (published, event_date DESC);
