@@ -49,4 +49,8 @@ function setSessionCookie(res, session) {
   res.setHeader('Set-Cookie', `ajedrez_session=${encodeURIComponent(session.token)}; Path=/; Max-Age=${SESSION_DAYS * 86400}; HttpOnly; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
 }
 
-module.exports = { hashPassword, verifyPassword, createSession, currentUser, setSessionCookie };
+function clearSessionCookie(res) {
+  res.setHeader('Set-Cookie', 'ajedrez_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax' + (process.env.NODE_ENV === 'production' ? '; Secure' : ''));
+}
+
+module.exports = { hashPassword, verifyPassword, digest, cookies, createSession, currentUser, setSessionCookie, clearSessionCookie };
