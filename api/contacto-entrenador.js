@@ -1,5 +1,7 @@
 const DESTINATARIO = process.env.TEACHER_APPLICATION_RECIPIENT || 'reinosojeremias0@gmail.com';
 const REMITENTE = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+const { sql } = require('@vercel/postgres');
+const { currentUser } = require('./_lib/auth');
 
 function respond(res, status, body) {
   res.status(status).json(body);
@@ -51,6 +53,17 @@ module.exports = async function handler(req, res) {
     try { new URL(enlaces); } catch (_) { return respond(res, 400, { error: 'El enlace profesional no es válido.' }); }
   }
 
+  let user = null;
+  try {
+    user = await currentUser(req);
+    const saved = await sql`INSERT INTO form_submissions (form_type, user_id, email, payload, consent_at)
+      VALUES ('teacher_application', ${user ? user.id : null}, ${correo}, ${JSON.stringify({ nombre, correo, especialidad, modalidad, experiencia, enlaces })}::jsonb, NOW()) RETURNING id`;
+    var submissionId = saved.rows[0].id;
+  } catch (error) {
+    console.error('form_persistence_error', error);
+    return respond(res, 503, { error: 'No pudimos guardar tu solicitud. Intentá nuevamente en unos minutos.' });
+  }
+
   const text = [
     'Nueva solicitud de incorporación de entrenador en AjedrezTotal',
     '',
@@ -76,9 +89,10 @@ module.exports = async function handler(req, res) {
         html
       })
     });
-    if (!response.ok) return respond(res, 502, { error: 'El proveedor de correo rechazó la solicitud.' });
+    if (!response.ok) return respond(res, 502, { error: 'La solicitud quedó guardada, pero el correo de aviso no pudo enviarse.' });
+    await sql`UPDATE form_submissions SET status = 'email_sent', updated_at = NOW() WHERE id = ${submissionId}`;
     return respond(res, 200, { ok: true });
   } catch (_) {
-    return respond(res, 502, { error: 'No se pudo conectar con el servicio de correo.' });
+    return respond(res, 502, { error: 'La solicitud quedó guardada, pero no se pudo conectar con el servicio de correo.' });
   }
 };
